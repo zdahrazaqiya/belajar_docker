@@ -1,0 +1,10 @@
+.git
+.gitignore
+.env
+.env.*
+Dockerfile*
+docker-compose*.yml
+*.log
+vendor/
+node_modules/
+laragon/

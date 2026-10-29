@@ -1,0 +1,49 @@
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8080:80"
+    environment:
+      DB_HOST: db
+      DB_NAME: ${MYSQL_DATABASE:-db_coffeeshop}
+      DB_USER: ${MYSQL_USER:-coffeeshop}
+      DB_PASSWORD: ${MYSQL_PASSWORD:-coffeeshop_secret}
+    volumes:
+      - uploads:/var/www/html/assets/img
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-db_coffeeshop}
+      MYSQL_USER: ${MYSQL_USER:-coffeeshop}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-coffeeshop_secret}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-root_secret_change_me}
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./db_coffeeshop.sql:/docker-entrypoint-initdb.d/01-db_coffeeshop.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h localhost -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    restart: unless-stopped
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    ports:
+      - "8081:80"
+    environment:
+      PMA_HOST: db
+      MYSQL_ROOT_PASSWORD: root_secret_change_me
+    depends_on:
+      - db
+
+volumes:
+  mysql_data:
+  uploads:
